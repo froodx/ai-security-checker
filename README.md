@@ -6,6 +6,8 @@ The checker uses one upstream scanner, [MEDUSA](https://github.com/Pantheon-Secu
 
 This tool supports security decisions. It cannot prove that model weights have no hidden trigger or that a host has no route from the public internet.
 
+The five layers come from [Kai's video on local AI security](https://youtu.be/3mx84MRj8lY): model files, chat templates, model runners, network exposure, and model behaviour combined with agent tools.
+
 ## Safety rules
 
 - Scans are read-only for target repositories and services.
