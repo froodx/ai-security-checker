@@ -1,0 +1,9 @@
+AI Security Checker
+Copyright 2026 the AI Security Checker contributors
+
+The wrapper source is licensed under AGPL-3.0-or-later. See LICENSE.
+
+The medusa/ Git submodule contains the independent MEDUSA project from
+Pantheon Security and its contributors. MEDUSA retains its own copyright,
+licence notices and Git history. The wrapper pins and invokes MEDUSA without
+modifying its source.

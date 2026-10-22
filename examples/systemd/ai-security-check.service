@@ -1,0 +1,14 @@
+[Unit]
+Description=Monthly local AI security check
+Documentation=https://github.com/froodx/ai-security-checker
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/code/ai-security-checker
+ExecStart=%h/code/ai-security-checker/ai-security-check scan --target hermes --mode medium
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+TimeoutStartSec=2h
+NoNewPrivileges=true
+PrivateTmp=true

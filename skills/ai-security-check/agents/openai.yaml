@@ -1,0 +1,4 @@
+interface:
+  display_name: "AI Security Check"
+  short_description: "Run and review a five-layer local audit"
+  default_prompt: "Use $ai-security-check to audit my local AI repository and explain the five-layer report."

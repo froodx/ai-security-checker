@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="asc-token" content="{{ token }}">
+  <title>AI Security Checker</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 1100px; margin: 0 auto; padding: 1.25rem; line-height: 1.45; }
+    fieldset, section { border: 1px solid #7776; border-radius: .5rem; margin: 1rem 0; padding: 1rem; }
+    label { display: block; margin: .65rem 0 .25rem; font-weight: 650; }
+    input, select, textarea, button { font: inherit; padding: .55rem; }
+    textarea { box-sizing: border-box; min-height: 5rem; width: 100%; }
+    button { cursor: pointer; margin: .5rem .5rem 0 0; }
+    button.danger { border-color: #a33; color: #c44; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border-bottom: 1px solid #7776; padding: .45rem; text-align: left; vertical-align: top; }
+    pre { background: #111; color: #eee; max-height: 22rem; overflow: auto; padding: .75rem; white-space: pre-wrap; }
+    .status { font-weight: 700; }
+    .grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .error { color: #d33; }
+    ul { padding-left: 1.25rem; }
+  </style>
+</head>
+<body>
+  <h1>AI Security Checker</h1>
+  <p>Runs read-only checks on this machine. Reports stay under the project directory.</p>
+
+  <fieldset>
+    <legend>Start a scan</legend>
+    <label for="preset">Configured target</label>
+    <select id="preset">
+      <option value="">Use explicit paths</option>
+      {% for target in targets %}<option value="{{ target.name }}">{{ target.label }}</option>{% endfor %}
+    </select>
+
+    <label for="paths">Code paths, one per line and no more than five</label>
+    <textarea id="paths" placeholder="/home/your-user/code/project"></textarea>
+
+    <label for="model-paths">Opt-in model paths, one per line</label>
+    <textarea id="model-paths" placeholder="Leave empty unless model inspection is approved"></textarea>
+
+    <label for="mode">Mode</label>
+    <select id="mode">
+      <option value="basic">Basic</option>
+      <option value="medium">Medium</option>
+      <option value="full">Full</option>
+    </select>
+    <div>
+      <button id="start">Start scan</button>
+      <button id="cancel" class="danger">Cancel scan</button>
+    </div>
+    <p id="message" class="error"></p>
+  </fieldset>
+
+  <section>
+    <h2>Status</h2>
+    <div class="grid">
+      <div><span class="status" id="status">idle</span><br><span id="task">No scan is running</span></div>
+      <div><span id="progress">0 / 0 checks</span><br><span id="elapsed">0 seconds</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Five-layer coverage</h2>
+    <table><thead><tr><th>Layer</th><th>Status</th><th>Reason</th></tr></thead><tbody id="coverage"></tbody></table>
+  </section>
+
+  <section>
+    <h2>Findings</h2>
+    <table><thead><tr><th>Severity</th><th>ID</th><th>Layer</th><th>Title</th><th>Asset</th></tr></thead><tbody id="findings"></tbody></table>
+  </section>
+
+  <section>
+    <h2>Reports and evidence</h2>
+    <ul id="reports"></ul>
+  </section>
+
+  <section>
+    <h2>Scan log</h2>
+    <pre id="logs"></pre>
+  </section>
+
+  <script>
+    const token = document.querySelector('meta[name="asc-token"]').content;
+    const textLines = id => document.getElementById(id).value.split('\n').map(v => v.trim()).filter(Boolean);
+    const escapeText = value => String(value ?? '');
+
+    async function post(url, body) {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-ASC-Token': token},
+        body: JSON.stringify(body)
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+      return data;
+    }
+
+    document.getElementById('start').addEventListener('click', async () => {
+      document.getElementById('message').textContent = '';
+      const preset = document.getElementById('preset').value;
+      try {
+        await post('/api/scans', {
+          target: preset || null,
+          paths: preset ? [] : textLines('paths'),
+          model_paths: textLines('model-paths'),
+          mode: document.getElementById('mode').value
+        });
+        await refresh();
+      } catch (error) {
+        document.getElementById('message').textContent = error.message;
+      }
+    });
+
+    document.getElementById('cancel').addEventListener('click', async () => {
+      document.getElementById('message').textContent = '';
+      try { await post('/api/cancel', {}); await refresh(); }
+      catch (error) { document.getElementById('message').textContent = error.message; }
+    });
+
+    function cell(row, value) {
+      const td = document.createElement('td');
+      td.textContent = escapeText(value);
+      row.appendChild(td);
+    }
+
+    async function refresh() {
+      const response = await fetch('/api/status', {cache: 'no-store'});
+      const data = await response.json();
+      document.getElementById('status').textContent = data.status;
+      document.getElementById('task').textContent = data.current_task;
+      document.getElementById('progress').textContent = `${data.completed_checks} / ${data.total_checks} checks`;
+      document.getElementById('elapsed').textContent = `${data.elapsed_seconds} seconds`;
+      document.getElementById('message').textContent = data.error || '';
+      document.getElementById('logs').textContent = (data.logs || []).join('\n');
+
+      const coverage = document.getElementById('coverage');
+      coverage.replaceChildren();
+      for (const item of data.coverage || []) {
+        const row = document.createElement('tr');
+        cell(row, `${item.layer}. ${item.name}`); cell(row, item.status); cell(row, item.reason);
+        coverage.appendChild(row);
+      }
+
+      const findings = document.getElementById('findings');
+      findings.replaceChildren();
+      for (const item of data.findings || []) {
+        const row = document.createElement('tr');
+        cell(row, item.severity); cell(row, item.id); cell(row, item.layer); cell(row, item.title); cell(row, item.asset);
+        findings.appendChild(row);
+      }
+
+      const reports = document.getElementById('reports');
+      reports.replaceChildren();
+      for (const file of data.report_files || []) {
+        const item = document.createElement('li');
+        const link = document.createElement('a');
+        link.href = `/reports/${encodeURIComponent(data.run_id)}/${file.split('/').map(encodeURIComponent).join('/')}`;
+        link.textContent = file;
+        item.appendChild(link); reports.appendChild(item);
+      }
+    }
+    refresh();
+    setInterval(refresh, 1000);
+  </script>
+</body>
+</html>

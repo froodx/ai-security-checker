@@ -1,0 +1,15 @@
+allowed_roots:
+  - ~/code
+
+targets:
+  hermes:
+    label: Hermes on this host
+    code_roots:
+      - ~/code/hermes-agent
+    focus_paths:
+      - ~/code/hermes-agent/hermes
+    model_paths: []
+    runtime: local
+
+# Copy this file to targets.yaml for local changes. targets.yaml is ignored by Git.
+# Add model directories only after checking their size and deciding to include them.

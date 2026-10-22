@@ -16,6 +16,7 @@ reports/
 config/targets.yaml
 config/*.local.*
 docs/ai-security-checker-plan-prompt.md
+docs/temp/
 .env
 .env.*
 !.env.example

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the local AI security check each month
+
+[Timer]
+OnCalendar=monthly
+Persistent=true
+RandomizedDelaySec=30m
+Unit=ai-security-check.service
+
+[Install]
+WantedBy=timers.target

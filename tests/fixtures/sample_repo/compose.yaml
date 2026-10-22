@@ -1,0 +1,17 @@
+services:
+  unsafe-v4:
+    image: example.invalid/test:1
+    ports:
+      - "0.0.0.0:11434:11434"
+  safe-loopback:
+    image: example.invalid/test:1
+    ports:
+      - "127.0.0.1:8080:8080"
+  unsafe-v6:
+    image: example.invalid/test:1
+    ports:
+      - "[::]:9000:9000"
+  docker-control:
+    image: example.invalid/test:1
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
