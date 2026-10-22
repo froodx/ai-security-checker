@@ -1,0 +1,48 @@
+# Python environments and caches
+.venv/
+.venv-*/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Checker state and generated evidence
+.state/
+reports/
+*.log
+
+# Machine-specific configuration
+config/targets.yaml
+config/*.local.*
+docs/ai-security-checker-plan-prompt.md
+.env
+.env.*
+!.env.example
+
+# Credentials and private keys
+*.key
+*.pem
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+credentials.json
+secrets.json
+
+# Models and other large binary artefacts
+*.gguf
+*.safetensors
+*.ckpt
+*.onnx
+*.pt
+*.pth
+*.pkl
+*.pickle
+
+# Local editor and operating-system files
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~
